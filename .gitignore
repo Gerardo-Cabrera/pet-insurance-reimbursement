@@ -1,5 +1,6 @@
 .venv/
 .env
+venv/
 backend/.env
 backend/.env.worker
 Prueba Técnica Full Stack - Pet Insurance Reimbursement.pdf
