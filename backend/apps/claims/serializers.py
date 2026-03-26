@@ -1,9 +1,12 @@
 from django.conf import settings
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from rest_framework import serializers
 
 from .models import Claim
 from .services import calculate_file_hash, dispatch_claim_processing
+
+
+DUPLICATE_INVOICE_MESSAGE = "This invoice file has already been submitted."
 
 
 class ClaimSerializer(serializers.ModelSerializer):
@@ -57,23 +60,30 @@ class ClaimSerializer(serializers.ModelSerializer):
         invoice_hash = calculate_file_hash(invoice)
 
         if Claim.objects.filter(invoice_hash=invoice_hash).exists():
-            raise serializers.ValidationError(
-                {"invoice": "This invoice file has already been submitted."}
-            )
+            raise serializers.ValidationError({"invoice": DUPLICATE_INVOICE_MESSAGE})
 
         pet = validated_data["pet"]
-        claim = Claim.objects.create(
-            owner=pet.owner,
-            invoice_hash=invoice_hash,
-            status=Claim.Status.PROCESSING,
-            processing_summary="Claim received and queued for automatic validation.",
-            **validated_data,
-        )
+        try:
+            with transaction.atomic():
+                claim = Claim.objects.create(
+                    owner=pet.owner,
+                    invoice_hash=invoice_hash,
+                    status=Claim.Status.PROCESSING,
+                    processing_summary="Claim received and queued for automatic validation.",
+                    **validated_data,
+                )
+                if settings.CLAIMS_PROCESSING_MODE.lower() != "sync":
+                    transaction.on_commit(lambda: dispatch_claim_processing(claim.id))
+        except IntegrityError as exc:
+            if "invoice_hash" in str(exc):
+                raise serializers.ValidationError(
+                    {"invoice": DUPLICATE_INVOICE_MESSAGE}
+                ) from exc
+            raise
+
         if settings.CLAIMS_PROCESSING_MODE.lower() == "sync":
             dispatch_claim_processing(claim.id)
             claim.refresh_from_db()
-        else:
-            transaction.on_commit(lambda: dispatch_claim_processing(claim.id))
         return claim
 
 
