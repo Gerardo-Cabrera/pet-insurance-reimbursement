@@ -1,0 +1,15 @@
+.venv/
+.env
+backend/.env
+backend/.env.worker
+Prueba Técnica Full Stack - Pet Insurance Reimbursement.pdf
+__pycache__/
+*.pyc
+*.sqlite3
+backend/media/
+backend/staticfiles/
+.pytest_cache/
+.mypy_cache/
+.coverage
+frontend/node_modules/
+frontend/dist/

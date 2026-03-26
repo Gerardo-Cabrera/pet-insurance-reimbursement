@@ -1,0 +1,106 @@
+x-backend-common: &backend-common
+  build:
+    context: ./backend
+  volumes:
+    - ./backend:/app
+  env_file:
+    - ${BACKEND_ENV_FILE}
+  environment:
+    DJANGO_DB_ENGINE: django.db.backends.postgresql
+    DJANGO_DB_NAME: ${POSTGRES_DB}
+    DJANGO_DB_USER: ${POSTGRES_USER}
+    DJANGO_DB_PASSWORD: ${POSTGRES_PASSWORD}
+    DJANGO_DB_HOST: postgres
+    DJANGO_DB_PORT: 5432
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  backend:
+    <<: *backend-common
+    command: sh -c "${BACKEND_COMMAND}"
+    ports:
+      - "${BACKEND_PORT}:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import json,sys,urllib.request; response=urllib.request.urlopen('http://127.0.0.1:8000/api/health/', timeout=5); payload=json.load(response); sys.exit(0 if response.status == 200 and payload.get('status') == 'ok' else 1)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  worker:
+    <<: *backend-common
+    command: sh -c "${WORKER_COMMAND}"
+    profiles:
+      - celery
+    env_file:
+      - ${BACKEND_ENV_FILE}
+      - ${WORKER_ENV_FILE}
+    depends_on:
+      backend:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    command: sh -c "${FRONTEND_COMMAND}"
+    environment:
+      VITE_DEV_PROXY_TARGET: ${FRONTEND_PROXY_TARGET}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "${FRONTEND_PORT}:5173"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:5173/').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  postgres:
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: ${REDIS_IMAGE}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  postgres_data:
