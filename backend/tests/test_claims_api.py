@@ -1,4 +1,5 @@
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import IntegrityError
 import pytest
 from rest_framework import status
 
@@ -76,6 +77,33 @@ def test_duplicate_invoice_hash_is_rejected(
 
     assert second_response.status_code == status.HTTP_400_BAD_REQUEST
     assert "invoice" in second_response.data
+
+
+@pytest.mark.django_db
+def test_duplicate_invoice_integrity_error_is_returned_as_validation_error(
+    api_client,
+    customer,
+    claim_payload,
+    monkeypatch,
+):
+    api_client.force_authenticate(user=customer)
+    exists_results = iter([False, True])
+
+    def duplicate_create(*args, **kwargs):
+        raise IntegrityError("database constraint violated")
+
+    class FilterResult:
+        def exists(self):
+            return next(exists_results)
+
+    monkeypatch.setattr(Claim.objects, "create", duplicate_create)
+    monkeypatch.setattr(Claim.objects, "filter", lambda *args, **kwargs: FilterResult())
+
+    response = api_client.post("/api/claims/", claim_payload, format="multipart")
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "invoice" in response.data
+    assert "already been submitted" in str(response.data["invoice"]).lower()
 
 
 @pytest.mark.django_db
