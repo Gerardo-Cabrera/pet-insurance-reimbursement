@@ -87,11 +87,17 @@ def test_duplicate_invoice_integrity_error_is_returned_as_validation_error(
     monkeypatch,
 ):
     api_client.force_authenticate(user=customer)
+    exists_results = iter([False, True])
 
     def duplicate_create(*args, **kwargs):
-        raise IntegrityError("UNIQUE constraint failed: claims_claim.invoice_hash")
+        raise IntegrityError("database constraint violated")
+
+    class FilterResult:
+        def exists(self):
+            return next(exists_results)
 
     monkeypatch.setattr(Claim.objects, "create", duplicate_create)
+    monkeypatch.setattr(Claim.objects, "filter", lambda *args, **kwargs: FilterResult())
 
     response = api_client.post("/api/claims/", claim_payload, format="multipart")
 

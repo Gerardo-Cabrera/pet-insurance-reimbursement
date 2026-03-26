@@ -75,10 +75,8 @@ class ClaimSerializer(serializers.ModelSerializer):
                 if settings.CLAIMS_PROCESSING_MODE.lower() != "sync":
                     transaction.on_commit(lambda: dispatch_claim_processing(claim.id))
         except IntegrityError as exc:
-            if "invoice_hash" in str(exc):
-                raise serializers.ValidationError(
-                    {"invoice": DUPLICATE_INVOICE_MESSAGE}
-                ) from exc
+            if Claim.objects.filter(invoice_hash=invoice_hash).exists():
+                raise serializers.ValidationError({"invoice": DUPLICATE_INVOICE_MESSAGE}) from exc
             raise
 
         if settings.CLAIMS_PROCESSING_MODE.lower() == "sync":
