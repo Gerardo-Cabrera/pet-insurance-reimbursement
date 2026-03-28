@@ -362,6 +362,20 @@ textarea {
   color: var(--slate);
 }
 
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.pagination-info {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
 @media (max-width: 768px) {
   .page-shell {
     padding: 20px 14px 40px;

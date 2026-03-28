@@ -68,11 +68,11 @@ Full stack solution for the pet insurance reimbursement technical test.
 ### Backend
 
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install -r backend/requirements.txt
-.venv/bin/python backend/manage.py migrate
-.venv/bin/python backend/manage.py createsuperuser
-.venv/bin/python backend/manage.py runserver
+python3 -m venv venv
+venv/bin/pip install -r backend/requirements.txt
+venv/bin/python backend/manage.py migrate
+venv/bin/python backend/manage.py createsuperuser
+venv/bin/python backend/manage.py runserver
 ```
 
 Backend API: `http://127.0.0.1:8000`
@@ -110,7 +110,7 @@ Inside Docker Compose, that proxy target is overridden with `FRONTEND_PROXY_TARG
 
 ```bash
 cd backend
-../.venv/bin/pytest
+../venv/bin/pytest
 ```
 
 Current verification baseline:
@@ -215,7 +215,7 @@ Use the registration form for a customer account.
 For support/admin accounts:
 
 ```bash
-.venv/bin/python backend/manage.py createsuperuser
+venv/bin/python backend/manage.py createsuperuser
 ```
 
 Then assign the `SUPPORT` role from Django admin if needed.

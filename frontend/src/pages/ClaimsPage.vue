@@ -1,12 +1,15 @@
 <script setup>
-import { computed, onMounted, onUnmounted, reactive, ref } from "vue";
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 
 import api from "../api";
+import PaginationBar from "../components/PaginationBar.vue";
 import StatusBadge from "../components/StatusBadge.vue";
 import { useAuthStore } from "../store";
 
 const auth = useAuthStore();
 const claims = ref([]);
+const totalCount = ref(0);
+const currentPage = ref(1);
 const pets = ref([]);
 const loading = ref(false);
 const saving = ref(false);
@@ -24,7 +27,7 @@ let refreshTimer = null;
 const statusMetrics = computed(() => [
   {
     label: "Total claims",
-    value: claims.value.length,
+    value: totalCount.value,
   },
   {
     label: "Processing",
@@ -45,14 +48,17 @@ const statusMetrics = computed(() => [
 async function loadClaims() {
   loading.value = true;
   try {
-    const { data } = await api.get("/claims/");
+    const { data } = await api.get("/claims/", { params: { page: currentPage.value } });
     claims.value = data.results;
+    totalCount.value = data.count;
   } catch (error) {
     errorMessage.value = "Unable to load claims.";
   } finally {
     loading.value = false;
   }
 }
+
+watch(currentPage, loadClaims);
 
 async function loadPets() {
   if (!auth.canManagePets.value) {
@@ -92,6 +98,7 @@ async function createClaim() {
       date_of_event: "",
       amount: "",
     });
+    currentPage.value = 1;
     await loadClaims();
   } catch (error) {
     errorMessage.value =
@@ -227,6 +234,12 @@ onUnmounted(stopPolling);
           <p v-if="claim.review_notes"><strong>Notes:</strong> {{ claim.review_notes }}</p>
         </article>
       </div>
+
+      <PaginationBar
+        :count="totalCount"
+        :current-page="currentPage"
+        @update:current-page="currentPage = $event"
+      />
     </article>
   </section>
 </template>

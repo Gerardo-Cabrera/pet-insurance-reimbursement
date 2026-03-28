@@ -85,5 +85,13 @@ class ClaimSerializer(serializers.ModelSerializer):
         return claim
 
 
-class ClaimReviewSerializer(serializers.Serializer):
+class ClaimApproveSerializer(serializers.Serializer):
     review_notes = serializers.CharField(required=False, allow_blank=True)
+
+
+class ClaimRejectSerializer(serializers.Serializer):
+    review_notes = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        help_text="Rejection notes are required to explain the decision.",
+    )
