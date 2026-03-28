@@ -7,7 +7,7 @@ from apps.users.models import User
 
 from .models import Claim
 from .permissions import ClaimPermission
-from .serializers import ClaimReviewSerializer, ClaimSerializer
+from .serializers import ClaimApproveSerializer, ClaimRejectSerializer, ClaimSerializer
 from .services import approve_claim, reject_claim
 
 
@@ -86,7 +86,7 @@ class ClaimViewSet(
         tags=["Claims"],
         summary="Approve a claim",
         description="Approve a claim that is already in `IN_REVIEW`.",
-        request=ClaimReviewSerializer,
+        request=ClaimApproveSerializer,
         responses={
             200: ClaimSerializer,
             400: OpenApiResponse(description="The claim is not in review."),
@@ -96,7 +96,7 @@ class ClaimViewSet(
     @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):
         claim = self.get_object()
-        serializer = ClaimReviewSerializer(data=request.data)
+        serializer = ClaimApproveSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         try:
@@ -117,7 +117,7 @@ class ClaimViewSet(
             "Reject a claim that is already in `IN_REVIEW`. `review_notes` should explain "
             "the rejection reason."
         ),
-        request=ClaimReviewSerializer,
+        request=ClaimRejectSerializer,
         responses={
             200: ClaimSerializer,
             400: OpenApiResponse(description="The claim is not in review or notes are missing."),
@@ -134,7 +134,7 @@ class ClaimViewSet(
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):
         claim = self.get_object()
-        serializer = ClaimReviewSerializer(data=request.data)
+        serializer = ClaimRejectSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         try:

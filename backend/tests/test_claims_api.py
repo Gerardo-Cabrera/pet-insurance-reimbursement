@@ -189,6 +189,7 @@ def test_reject_requires_notes(api_client, customer, support_user, claim_payload
     )
 
     assert review_response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "review_notes" in review_response.data
 
 
 @pytest.mark.django_db
