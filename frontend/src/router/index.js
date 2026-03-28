@@ -1,11 +1,12 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import ClaimsPage from "../pages/ClaimsPage.vue";
 import LoginPage from "../pages/LoginPage.vue";
-import PetsPage from "../pages/PetsPage.vue";
-import RegisterPage from "../pages/RegisterPage.vue";
-import SupportQueuePage from "../pages/SupportQueuePage.vue";
 import { useAuthStore } from "../store";
+
+const RegisterPage = () => import("../pages/RegisterPage.vue");
+const PetsPage = () => import("../pages/PetsPage.vue");
+const ClaimsPage = () => import("../pages/ClaimsPage.vue");
+const SupportQueuePage = () => import("../pages/SupportQueuePage.vue");
 
 const routes = [
   {
