@@ -1,11 +1,14 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 
 import api from "../api";
+import PaginationBar from "../components/PaginationBar.vue";
 import { useAuthStore } from "../store";
 
 const auth = useAuthStore();
 const pets = ref([]);
+const totalCount = ref(0);
+const currentPage = ref(1);
 const loading = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
@@ -45,14 +48,17 @@ async function loadPets() {
   loading.value = true;
   errorMessage.value = "";
   try {
-    const { data } = await api.get("/pets/");
+    const { data } = await api.get("/pets/", { params: { page: currentPage.value } });
     pets.value = data.results;
+    totalCount.value = data.count;
   } catch (error) {
     errorMessage.value = "Unable to load pets.";
   } finally {
     loading.value = false;
   }
 }
+
+watch(currentPage, loadPets);
 
 function resetForm() {
   editingId.value = null;
@@ -89,6 +95,7 @@ async function submitPet() {
       successMessage.value = "Pet created successfully.";
     }
     resetForm();
+    currentPage.value = 1;
     await loadPets();
   } catch (error) {
     errorMessage.value =
@@ -263,6 +270,12 @@ onMounted(loadPets);
             </p>
           </article>
         </div>
+
+        <PaginationBar
+          :count="totalCount"
+          :current-page="currentPage"
+          @update:current-page="currentPage = $event"
+        />
       </article>
     </div>
   </section>
