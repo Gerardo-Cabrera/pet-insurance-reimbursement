@@ -115,10 +115,23 @@ cd backend
 
 Current verification baseline:
 
-- Backend API tests: `19 passed`
+- Backend API tests: `20 passed`
 - Django checks: `manage.py check` OK
 - OpenAPI schema generation: OK
 - Frontend build: `npm run build` OK
+
+## CI/CD
+
+GitHub Actions workflows run automatically on push and pull request to `main` and `develop`:
+
+| Workflow | Trigger paths | What it does |
+|---|---|---|
+| **CI Backend** | `backend/**` | Install deps, run migrations check, `pytest` against PostgreSQL 16 |
+| **CI Frontend** | `frontend/**` | Install deps, `npm run build` production bundle |
+
+Both pipelines use path filtering so backend-only changes skip the frontend job and vice versa. Concurrency groups cancel redundant runs on the same branch.
+
+Workflow files live in `.github/workflows/`.
 
 ## API shortcuts
 
