@@ -64,8 +64,14 @@ async function loadPets() {
   if (!auth.canManagePets.value) {
     return;
   }
-  const { data } = await api.get("/pets/");
-  pets.value = data.results;
+  let allPets = [];
+  let url = "/pets/";
+  while (url) {
+    const { data } = await api.get(url);
+    allPets = allPets.concat(data.results);
+    url = data.next ? new URL(data.next).pathname + new URL(data.next).search : null;
+  }
+  pets.value = allPets;
   if (!form.pet && pets.value.length > 0) {
     form.pet = pets.value[0].id;
   }
