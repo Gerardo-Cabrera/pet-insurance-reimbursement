@@ -69,7 +69,12 @@ async function loadPets() {
   while (url) {
     const { data } = await api.get(url);
     allPets = allPets.concat(data.results);
-    url = data.next;
+    if (data.next) {
+      const parsed = new URL(data.next, window.location.origin);
+      url = parsed.pathname.replace(/^\/api/, "") + parsed.search;
+    } else {
+      url = null;
+    }
   }
   pets.value = allPets;
   if (!form.pet && pets.value.length > 0) {
